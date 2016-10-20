@@ -3,7 +3,7 @@
 //------------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 GRVC University of Seville
+// Copyright (c) 2016 Pablo Ramon Soria - GRVC University of Seville
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,16 +24,42 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "ZedArucoDetector.h"
+// Simple Tag Visualizer
+#include <opencv2/opencv.hpp>
+#include <opencv2/aruco.hpp>
 
-int main (int _argc, char ** _argv){
-    ZedArucoDetector zad;
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
-    zad.init(atoi(_argv[1]),atof(_argv[2]), _argv[3], true);
-    for(;;){
-        boost::this_thread::sleep(boost::posix_time::microseconds(30000));
+#include <vector>
 
-    }
+#include <thread>
+#include <mutex>
 
-    zad.stop();
-}
+struct ArucoTag {
+    unsigned id;
+    pcl::PointXYZ position;
+    Eigen::Matrix3f rotation;
+};
+
+
+class ZedArucoDetector{
+public:	
+    bool init(int _cameraIdx, double _tagSize, std::string _calibFile, bool visualize);
+    bool stop();
+
+    std::vector<ArucoTag> lastTags();
+private:
+    Eigen::Matrix3f rotVector2Matrix(const double &_rx, const double &_ry, const double &_rz);
+
+    std::vector<ArucoTag> mLastTags;
+    bool mVisualize = false;
+	
+    std::mutex mSecureMutex;
+    std::thread *mProcessThread;
+    int mCameraIdx;
+    double mTagSize;
+    std::string mCalibFile;
+    bool mRunning = false;
+};
